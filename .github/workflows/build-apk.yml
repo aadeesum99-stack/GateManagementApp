@@ -1,0 +1,50 @@
+name: Build Gate Management APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+          unzip -q gradle-8.10.2-bin.zip
+          echo "$PWD/gradle-8.10.2/bin" >> $GITHUB_PATH
+
+      - name: Extract Android project
+        run: |
+          mkdir build-project
+          unzip -q GateManagement_APK_Ready_History_Fixed.zip -d build-project
+
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
+      - name: Install Android SDK
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build APK
+        working-directory: build-project/GateManagement_APK_Ready
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gate-Management-APK
+          path: build-project/GateManagement_APK_Ready/app/build/outputs/apk/debug/app-debug.apk
